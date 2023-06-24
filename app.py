@@ -3,9 +3,11 @@ from sklearn.datasets import load_iris
 import streamlit as st
 import pandas as pd
 import time, os, sys, traceback
+from threading import Thread
+from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 target = ''
-algorithm = 'TreeOptimizer'
+algorithm = ''
 individuals = 10
 generations = 10
 x = [[]]
@@ -59,30 +61,49 @@ def set_custom_params(fixed_rows, range_rows):
 
         custom_params_diccionary[param_name] = param
 
-def execute():
+def optimize(optimizer):
+    optimizer.optimize_clf(individuals, generations, checkpoint)
+
+def generations_status_bar():
     latest_generation = st.empty()
     bar_gen = st.progress(0)
 
+    for i in range(generations):
+        latest_generation.text(f'Generation {i+1}')
+        bar_gen.progress(int(100*(i+1)/generations))
+        time.sleep(0.5)
+
+def individuals_status_bar():
     latest_individual = st.empty()
     bar_indi = st.progress(0)
 
+    for i in range(individuals):
+        latest_individual.text(f'Individual {i+1}')
+        bar_indi.progress(int(100*(i+1)/individuals))
+        time.sleep(0.1)
+
+def execute():
+    optimizer = None
     try:
-        #TO DO: paralellize both progress bars and optimizer execution
         optimizer = eval(algorithm+'(x, y, custom_params=custom_params_diccionary, custom_fixed_params=custom_fixed_params_diccionary)')
-        optimizer.optimize_clf(individuals, generations, checkpoint)
 
-        #TO DO: reflect csv generation progress
-        for i in range(generations):
-            latest_generation.text(f'Generation {i+1}')
-            bar_gen.progress(int(100*(i+1)/generations))
-            time.sleep(0.5)
+        thread_1 = Thread(target=optimize, args=[optimizer])
+        thread_2 = Thread(target=generations_status_bar)
+        thread_3 = Thread(target=individuals_status_bar)
 
-        for i in range(individuals):
-            latest_individual.text(f'Individual {i+1}')
-            bar_indi.progress(int(100*(i+1)/individuals))
-            time.sleep(0.1)
+        add_script_run_ctx(thread_1)
+        add_script_run_ctx(thread_2)
+        add_script_run_ctx(thread_3)
+
+        threads = [thread_1, thread_2, thread_3]
+
+        for t in threads:
+            t.start()
         
-        download_files(optimizer)
+        for t in threads:
+            t.join()
+        #TO DO: reflect csv generation progress
+        
 
     except Exception as err:
         st.error('Oops...Caparrini has to work more (but maybe you should check your input data, selected target, amount of individuals and generations...)', icon="🚨")
@@ -91,30 +112,46 @@ def execute():
 
     else:
         st.success('Optimization has been successfully generated!', icon="✅")
+
+    return optimizer
+
+def download_files(population_path, logbook_path):
+    if population_path is not '' and logbook_path is not '':
+        with open(population_path) as file:
+            btn_p = st.download_button(
+                    label="Download populations.csv",
+                    data=file,
+                    file_name="populations.csv",
+                    mime="text/csv"
+                )
+        with open(logbook_path) as file:
+            btn_l = st.download_button(
+                    label="Download logbook.csv",
+                    data=file,
+                    file_name="logbook.csv",
+                    mime="text/csv"
+                )
+
+def inizialize_session_state_vars():
+    if "last_population_path" not in st.session_state:
+        st.session_state["last_population_path"] = ''
+
+    if "last_logbook_path" not in st.session_state:
+        st.session_state["last_logbook_path"] = ''
+
+    if "show_results" not in st.session_state:
+        st.session_state["show_results"] = False
+
+def restart_session_state_vars():
+    st.session_state.last_population_path = ''
+    st.session_state.last_logbook_path = ''
+    st.session_state.show_results = False
     
-    finally:
-        st.button('Try again!', key = 'restart_btn')
-
-    return
-
-def download_files(optimizer):
-    population_path = os.path.join(optimizer.results_path, "populations.csv")
-    logbook_path = os.path.join(optimizer.results_path, "logbook.csv")
-    with open(population_path) as file:
-        btn_p = st.download_button(
-                label="Download populations.csv",
-                data=file,
-                file_name="populations.csv",
-                mime="text/csv"
-            )
-    with open(logbook_path) as file:
-        btn_l = st.download_button(
-                label="Download logbook.csv",
-                data=file,
-                file_name="logbook.csv",
-                mime="text/csv"
-            )
-
+def set_session_state_vars(last_population_path_param, last_logbook_path_param, show_results_param):
+    st.session_state.last_population_path = last_population_path_param
+    st.session_state.last_logbook_path = last_logbook_path_param
+    st.session_state.show_results = show_results_param
+    
 st.info('Pay attention to the quality of your input data (column names, types of values, consistency, etc).', icon="ℹ️")
 input_csv_file = st.file_uploader("Upload your input file")
 
@@ -176,11 +213,30 @@ if input_csv_file is not None:
         'Select the amount of generations',
         range(2, 101),
         value = generations)
+    
+    inizialize_session_state_vars()
 
-    if st.button('Start execution', key = 'start_btn', disabled=st.session_state.get("start_disabled", False)):
-        execute()
+    if st.button('Start new execution'):
+        restart_session_state_vars()
 
-    if st.session_state.get("start_btn", False):
-        st.session_state.start_disabled = False
-    elif st.session_state.get("restart_btn", False):
-        st.session_state.start_disabled = True
+        optimizer = execute()
+
+        set_session_state_vars(
+            last_population_path_param = os.path.join(optimizer.results_path, "populations.csv"),
+            last_logbook_path_param = os.path.join(optimizer.results_path, "logbook.csv"),
+            show_results_param = True
+        )
+
+    if st.session_state.show_results is not False:
+        with open(st.session_state.last_population_path) as file:
+            df_output = pd.read_csv(file)
+            st.table(df_output)
+            file.seek(0)
+
+        with open(st.session_state.last_logbook_path) as file:
+            df_output = pd.read_csv(file, usecols=['avg','min','max'])
+            #need to be rescaled by using altair charts
+            st.line_chart(df_output)
+    
+    download_files(st.session_state.last_population_path, st.session_state.last_logbook_path)
+    
