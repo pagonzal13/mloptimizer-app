@@ -4,7 +4,6 @@ WORKDIR /mloptimizer
 
 COPY . /mloptimizer
 
-#RUN pip install -r /mloptimizer/requirements.txt
-#RUN pip install --upgrade streamlit
+RUN pip install -r /mloptimizer/requirements.txt
 
-#CMD [ "streamlit", "run", "app.py" ]
+CMD [ "streamlit", "run", "app.py" ]

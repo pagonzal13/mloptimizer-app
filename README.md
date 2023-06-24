@@ -17,6 +17,7 @@ docker build -t mloptimizer-img .
 ```
 docker run -dp 127.0.0.1:8000:8501 --name mloptimizer-app mloptimizer-img
 ```
+Take into account that Streamlit app uses port 8501 of your new container, and it is mapped to your localhost 8000 port. You can edit command above to use a different port of your local machine.
 4. You can now view the MLOptimizer App in your browser. Open your favorite browser and go to http://localhost:8000/
 
 ## Easy to use
