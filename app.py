@@ -163,76 +163,89 @@ def set_session_state_vars(last_population_path_param, last_logbook_path_param, 
     st.session_state.last_population_path = last_population_path_param
     st.session_state.last_logbook_path = last_logbook_path_param
     st.session_state.show_results = show_results_param
-    
-input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
+
+col1, col2 = st.columns([0.3, 0.7])
+with col1:
+    input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
 
 if input_csv_file is not None:
     
     df = pd.read_csv(input_csv_file)
-    with st.expander("Review and/or edit your data"):
-        st.data_editor(df, use_container_width=True)
+    with col2:
+        with st.expander("Review and/or edit your data"):
+            st.data_editor(df, use_container_width=True)
 
     st.divider()
 
     target, algorithm, genetic_params = st.tabs(["Target", "Algorithm", "Genetic params"])
 
     with target:
-        target = st.selectbox(
-        'Which column do you want to use as target?',
-        df.columns)
+        col1, col2 = st.columns(2)
 
-        y = df[target]
-        x = df.drop(target, axis=1)
+        with col1:
+            target = st.selectbox(
+            'Which column do you want to use as target?',
+            df.columns)
+
+            y = df[target]
+            x = df.drop(target, axis=1)
 
     with algorithm:
-        algorithm = st.radio(
-            "Which algorithm would you like to use?",
-            ('TreeOptimizer',
-                'ForestOptimizer',
-                'ExtraTreesOptimizer',
-                'GradientBoostingOptimizer',
-                'XGBClassifierOptimizer',
-                'CatBoostClassifierOptimizer',
-                'KerasClassifierOptimizer',
-                'SVCOptimizer'))
+        col1, col2 = st.columns([0.3, 0.7])
+
+        with col1:
+            algorithm = st.radio(
+                "Which algorithm would you like to use?",
+                ('TreeOptimizer',
+                    'ForestOptimizer',
+                    'ExtraTreesOptimizer',
+                    'GradientBoostingOptimizer',
+                    'XGBClassifierOptimizer',
+                    'CatBoostClassifierOptimizer',
+                    'KerasClassifierOptimizer',
+                    'SVCOptimizer'))
         
-        use_custom_params = st.checkbox('Use custom params')
+        with col2:
+            use_custom_params = st.checkbox('Use custom params')
 
-        if use_custom_params:
-            st.write("Edit the table below with the hyper-params values you want")
-            st.info("By default, parameters use ranges (they are not fixed). You can mark 'fixed' column of the parameters you want to set with a fixed value and set it in corresponding column.", icon="🤓")
+            if use_custom_params:
+                st.write("Edit the table below with the hyper-params values you want")
+                st.info("By default, parameters use ranges (they are not fixed). You can mark 'fixed' column of the parameters you want to set with a fixed value and set it in corresponding column.", icon="🤓")
 
-            edited_df = st.data_editor(
-                get_dataframe(algorithm),
-                hide_index=True,
-                use_container_width=True,
-                column_config={
-                    "fixed value": st.column_config.NumberColumn(),
-                    "range min": st.column_config.NumberColumn(),
-                    "range max": st.column_config.NumberColumn(),
-                    "denominator": st.column_config.NumberColumn()
-                },
-                disabled=("hyper-param", "type")
-            )
-            
-            fixed_rows = edited_df.loc[edited_df["use fixed"] == True]
-            range_rows = edited_df.loc[edited_df["use fixed"] == False]
+                edited_df = st.data_editor(
+                    get_dataframe(algorithm),
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "fixed value": st.column_config.NumberColumn(),
+                        "range min": st.column_config.NumberColumn(),
+                        "range max": st.column_config.NumberColumn(),
+                        "denominator": st.column_config.NumberColumn()
+                    },
+                    disabled=("hyper-param", "type")
+                )
+                
+                fixed_rows = edited_df.loc[edited_df["use fixed"] == True]
+                range_rows = edited_df.loc[edited_df["use fixed"] == False]
 
-            set_custom_params(fixed_rows, range_rows)
+                set_custom_params(fixed_rows, range_rows)
 
-        else:
-            custom_params_diccionary = {}
-            custom_fixed_params_diccionary = {}
+            else:
+                custom_params_diccionary = {}
+                custom_fixed_params_diccionary = {}
 
     with genetic_params:
-        individuals = st.select_slider(
-            'Select the amount of individuals',
-            range(2, 101),
-            value = individuals)
-        generations = st.select_slider(
-            'Select the amount of generations',
-            range(2, 101),
-            value = generations)
+        col1, col2 = st.columns(2)
+
+        with col1:
+            individuals = st.select_slider(
+                'Select the amount of individuals',
+                range(2, 101),
+                value = individuals)
+            generations = st.select_slider(
+                'Select the amount of generations',
+                range(2, 101),
+                value = generations)
     
     inizialize_session_state_vars()
 
