@@ -127,7 +127,7 @@ def execute():
     return optimizer
 
 def download_files(population_path='', logbook_path=''):
-    if population_path is not '':
+    if population_path != '':
         with open(population_path) as file:
             btn_p = st.download_button(
                     label="Download populations.csv",
@@ -135,7 +135,7 @@ def download_files(population_path='', logbook_path=''):
                     file_name="populations.csv",
                     mime="text/csv"
                 )
-    if logbook_path is not '':
+    if logbook_path != '':
         with open(logbook_path) as file:
             btn_l = st.download_button(
                     label="Download logbook.csv",
@@ -257,6 +257,7 @@ if input_csv_file is not None:
         optimizer = execute()
 
     if st.session_state.show_results is not False:
+        st.write("Take a look at the optimization results below")
         population, logbook = st.tabs(["Population", "LogBook"])
 
         with population:
