@@ -264,7 +264,7 @@ if input_csv_file is not None:
                 download_files(population_path=st.session_state.last_population_path)
 
                 df_output = pd.read_csv(file)
-                st.table(df_output)
+                st.dataframe(data=df_output, height=350, use_container_width=True)
                 file.seek(0)
                 
         with logbook:
