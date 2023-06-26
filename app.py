@@ -5,6 +5,7 @@ import pandas as pd
 import time, os, sys, traceback
 from threading import Thread
 from streamlit.runtime.scriptrunner import add_script_run_ctx
+from watcher import *
 
 st.set_page_config(
     page_title="MLOptimizer",
@@ -86,39 +87,38 @@ def optimize(optimizer):
             show_results_param = True
         )
 
-def generations_status_bar():
-    latest_generation = st.empty()
-    bar_gen = st.progress(0)
+def generations_status_bar(progress_path):
+    bar_gen = st.progress(0, 'Generation 0')
 
-    for i in range(generations):
-        latest_generation.text(f'Generation {i+1}')
-        bar_gen.progress(int(100*(i+1)/generations))
-        time.sleep(0.5)
+    watch = Watcher(iterations=generations, label='Generation')
+    watch.run(watched_dir=progress_path, progress_bar=bar_gen)
 
-def individuals_status_bar():
-    latest_individual = st.empty()
-    bar_indi = st.progress(0)
+def individuals_status_bar(progress_path):
+    bar_indi = st.progress(0, 'Individual 0')
 
-    for i in range(individuals):
-        latest_individual.text(f'Individual {i+1}')
-        bar_indi.progress(int(100*(i+1)/individuals))
-        time.sleep(0.1)
+    watch = Watcher(iterations=individuals, label='Individual')
+    watch.run(watched_dir=progress_path, progress_bar=bar_indi)
 
 def execute():
     optimizer = eval(algorithm+'(x, y, custom_params=custom_params_diccionary, custom_fixed_params=custom_fixed_params_diccionary)')
 
     thread_1 = Thread(target=optimize, args=[optimizer])
-    thread_2 = Thread(target=generations_status_bar)
-    thread_3 = Thread(target=individuals_status_bar)
-
     add_script_run_ctx(thread_1)
+    thread_1.start()
+
+    time.sleep(0.2)
+
+    thread_2 = Thread(target=generations_status_bar, args=[os.path.join(optimizer.progress_path)])
+    #TO BE FIXED: this is not progress_path
+    thread_3 = Thread(target=individuals_status_bar, args=[os.path.join(optimizer.progress_path)])
+
     add_script_run_ctx(thread_2)
     add_script_run_ctx(thread_3)
 
-    threads = [thread_1, thread_2, thread_3]
+    thread_2.start()
+    thread_3.start()
 
-    for t in threads:
-        t.start()
+    threads = [thread_1, thread_2, thread_3]
     
     for t in threads:
         t.join()
@@ -238,14 +238,14 @@ if input_csv_file is not None:
         col1, col2 = st.columns(2)
 
         with col1:
-            individuals = st.select_slider(
-                'Select the amount of individuals',
-                range(2, 101),
-                value = individuals)
             generations = st.select_slider(
                 'Select the amount of generations',
                 range(2, 101),
                 value = generations)
+            individuals = st.select_slider(
+                'Select the amount of individuals',
+                range(2, 101),
+                value = individuals)
     
     inizialize_session_state_vars()
 
