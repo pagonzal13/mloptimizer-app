@@ -107,6 +107,8 @@ def execute():
 
     thread_1.join()
 
+    return optimizer
+
 def download_files(population_path='', logbook_path=''):
     if population_path != '':
         with open(population_path) as file:
@@ -174,17 +176,15 @@ if input_csv_file is not None:
     with algorithm:
         col1, col2 = st.columns([0.3, 0.7])
 
+        optimizer_class_list = BaseOptimizer.get_subclasses(BaseOptimizer)
+        optimizer_list = []
+        for optimizer_item in optimizer_class_list:
+            optimizer_list.append(optimizer_item.__name__)
+
         with col1:
             algorithm = st.radio(
                 "Which algorithm would you like to use?",
-                ('TreeOptimizer',
-                    'ForestOptimizer',
-                    'ExtraTreesOptimizer',
-                    'GradientBoostingOptimizer',
-                    'XGBClassifierOptimizer',
-                    'CatBoostClassifierOptimizer',
-                    'KerasClassifierOptimizer',
-                    'SVCOptimizer'))
+                optimizer_list)
         
         with col2:
             use_custom_params = st.checkbox('Use custom params')
@@ -234,11 +234,15 @@ if input_csv_file is not None:
 
     if st.button('Start new execution'):
         restart_session_state_vars()
-        execute()
+        optimizer = execute()
 
     if st.session_state.show_results is not False:
         st.write("Take a look at the optimization results below")
-        population, logbook = st.tabs(["Population", "LogBook"])
+        population, logbook, search_space = st.tabs(["Population", "LogBook", "Search Space"])
+
+        optimizer_param_names = list(optimizer.get_params().keys())
+        optimizer_param_names.append("fitness")
+        population_df = optimizer.population_2_df()
 
         with population:
             with open(st.session_state.last_population_path) as file:
@@ -252,7 +256,10 @@ if input_csv_file is not None:
             with open(st.session_state.last_logbook_path) as file:
                 download_files(logbook_path=st.session_state.last_logbook_path)
 
-                df_output = pd.read_csv(file, usecols=['avg','min','max'])
-                #need to be rescaled by using altair charts
-                st.line_chart(df_output)
-    
+                logbokk_graphic = plotly_logbook(optimizer.logbook, population_df)
+                st.plotly_chart(logbokk_graphic, use_container_width=True)
+        
+        with search_space:
+                dfp = population_df[optimizer_param_names]
+                search_space_graphic = plotly_search_space(dfp)
+                st.plotly_chart(search_space_graphic, use_container_width=True)
