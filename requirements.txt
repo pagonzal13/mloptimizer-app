@@ -1,0 +1,2 @@
+mloptimizer>=0.5.9
+streamlit>=1.23
