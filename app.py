@@ -87,17 +87,12 @@ def optimize(optimizer):
             show_results_param = True
         )
 
-def generations_status_bar(progress_path):
+def genetic_status_bar(progress_path):
     bar_gen = st.progress(0, 'Generation 0')
-
-    watch = Watcher(iterations=generations, label='Generation')
-    watch.run(watched_dir=progress_path, progress_bar=bar_gen)
-
-def individuals_status_bar(progress_path):
     bar_indi = st.progress(0, 'Individual 0')
 
-    watch = Watcher(iterations=individuals, label='Individual')
-    watch.run(watched_dir=progress_path, progress_bar=bar_indi)
+    watch = Watcher(generations=generations, individuals=individuals)
+    watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
 
 def execute():
     optimizer = eval(algorithm+'(x, y, custom_params=custom_params_diccionary, custom_fixed_params=custom_fixed_params_diccionary)')
@@ -106,25 +101,11 @@ def execute():
     add_script_run_ctx(thread_1)
     thread_1.start()
 
-    time.sleep(0.2)
+    time.sleep(0.1)
 
-    thread_2 = Thread(target=generations_status_bar, args=[os.path.join(optimizer.progress_path)])
-    #TO BE FIXED: this is not progress_path
-    thread_3 = Thread(target=individuals_status_bar, args=[os.path.join(optimizer.progress_path)])
+    genetic_status_bar(os.path.join(optimizer.progress_path))
 
-    add_script_run_ctx(thread_2)
-    add_script_run_ctx(thread_3)
-
-    thread_2.start()
-    thread_3.start()
-
-    threads = [thread_1, thread_2, thread_3]
-    
-    for t in threads:
-        t.join()
-    #TO DO: reflect csv generation progress
-    
-    return optimizer
+    thread_1.join()
 
 def download_files(population_path='', logbook_path=''):
     if population_path != '':
@@ -238,23 +219,22 @@ if input_csv_file is not None:
         col1, col2 = st.columns(2)
 
         with col1:
-            generations = st.select_slider(
-                'Select the amount of generations',
-                range(2, 101),
-                value = generations)
             individuals = st.select_slider(
                 'Select the amount of individuals',
                 range(2, 101),
                 value = individuals)
-    
+            generations = st.select_slider(
+                'Select the amount of generations',
+                range(2, 101),
+                value = generations)
+
     inizialize_session_state_vars()
 
     st.divider()
 
     if st.button('Start new execution'):
         restart_session_state_vars()
-
-        optimizer = execute()
+        execute()
 
     if st.session_state.show_results is not False:
         st.write("Take a look at the optimization results below")
