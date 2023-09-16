@@ -2,7 +2,6 @@ from mloptimizer.genoptimizer import *
 from sklearn.datasets import load_iris
 import streamlit as st
 import pandas as pd
-import time, os, sys, traceback
 from threading import Thread
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 from watcher import *
@@ -10,13 +9,13 @@ from utils import *
 
 # Config
 st.set_page_config(
-    page_title="MLOptimizer",
+    page_title="MLOptimizer UI",
     page_icon="💻",
     layout="wide"
 )
 
 # Title
-st.header('MLOptimizer')
+st.header('MLOptimizer UI')
 st.subheader('Find the best hyper-parameters for training your data!')
 st.divider()
 
