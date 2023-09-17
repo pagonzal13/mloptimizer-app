@@ -2,157 +2,37 @@ from mloptimizer.genoptimizer import *
 from sklearn.datasets import load_iris
 import streamlit as st
 import pandas as pd
-import time, os, sys, traceback
 from threading import Thread
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 from watcher import *
+from utils import *
 
+# Config
 st.set_page_config(
-    page_title="MLOptimizer",
+    page_title="MLOptimizer UI",
     page_icon="💻",
     layout="wide"
 )
 
-st.header('MLOptimizer')
+# Title
+st.header('MLOptimizer UI')
 st.subheader('Find the best hyper-parameters for training your data!')
 st.divider()
 
-target = ''
-algorithm = ''
-individuals = 10
-generations = 10
-x = [[]]
-y = []
-custom_params_diccionary = {}
-custom_fixed_params_diccionary = {}
-checkpoint = None
+# Inizialization (Utils is class with methods to manage optimizer and editable variables)
+utils = Utils()
+utils.inizialize_session_state_vars()
 
-def get_dataframe(algorithm):
-    df = pd.DataFrame()
+# Input file section
+col1, col2 = st.columns([0.4, 0.6])
 
-    for param_name, param_obj in eval(algorithm).get_default_params().items():
-        denominator = None
-        if param_obj.type.__name__ == "float":
-            denominator = param_obj.denominator
-
-        param_row = pd.DataFrame(
-                {
-                    'hyper-param': [param_obj.name],
-                    'type': [param_obj.type.__name__],
-                    'use fixed': [False],
-                    'fixed value': [None],
-                    'range min': [param_obj.min_value],
-                    'range max': [param_obj.max_value],
-                    'denominator': [denominator]
-                }
-            )
-        df = pd.concat([df, param_row])
-    return df
-
-def get_param_type(param):
-        if param == "int":
-            return int
-        elif param == "float":
-            return float
-        else:
-            return param
-
-def set_custom_params(fixed_rows, range_rows):
-    for i in range(len(fixed_rows)):
-        custom_fixed_params_diccionary[fixed_rows.iloc[i]["hyper-param"]] = fixed_rows.iloc[i]["fixed value"]
-
-    for i in range(len(range_rows)):
-        param_name = range_rows.iloc[i]["hyper-param"]
-        param_type = get_param_type(range_rows.iloc[i]["type"])
-        param_min = range_rows.iloc[i]["range min"]
-        param_max = range_rows.iloc[i]["range max"]
-        param_denominator = range_rows.iloc[i]["denominator"]
-
-        param = Param(param_name, param_min, param_max, param_type, param_denominator)
-
-        custom_params_diccionary[param_name] = param
-
-def optimize(optimizer):
-    try:
-        optimizer.optimize_clf(individuals, generations, checkpoint)
-    except Exception as err:
-        st.error('Oops...Caparrini has to work more (but maybe you should check your input data, selected target, amount of individuals and generations...)', icon="🚨")
-        name = type(err).__name__
-        st.error(name + ': ' + str(err))
-    else:
-        st.success('Optimization has been successfully generated!', icon="✅")
-        set_session_state_vars(
-            last_population_path_param = os.path.join(optimizer.results_path, "populations.csv"),
-            last_logbook_path_param = os.path.join(optimizer.results_path, "logbook.csv"),
-            show_results_param = True
-        )
-
-def genetic_status_bar(progress_path):
-    bar_gen = st.progress(0, 'Generation 0')
-    bar_indi = st.progress(0, 'Individual 0')
-
-    watch = Watcher(generations=generations, individuals=individuals)
-    watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
-
-def execute():
-    optimizer = eval(algorithm+'(x, y, custom_params=custom_params_diccionary, custom_fixed_params=custom_fixed_params_diccionary)')
-
-    thread_1 = Thread(target=optimize, args=[optimizer])
-    add_script_run_ctx(thread_1)
-    thread_1.start()
-
-    time.sleep(0.1)
-
-    genetic_status_bar(os.path.join(optimizer.progress_path))
-
-    thread_1.join()
-
-    return optimizer
-
-def download_files(population_path='', logbook_path=''):
-    if population_path != '':
-        with open(population_path) as file:
-            btn_p = st.download_button(
-                    label="Download populations.csv",
-                    data=file,
-                    file_name="populations.csv",
-                    mime="text/csv"
-                )
-    if logbook_path != '':
-        with open(logbook_path) as file:
-            btn_l = st.download_button(
-                    label="Download logbook.csv",
-                    data=file,
-                    file_name="logbook.csv",
-                    mime="text/csv"
-                )
-
-def inizialize_session_state_vars():
-    if "last_population_path" not in st.session_state:
-        st.session_state["last_population_path"] = ''
-
-    if "last_logbook_path" not in st.session_state:
-        st.session_state["last_logbook_path"] = ''
-
-    if "show_results" not in st.session_state:
-        st.session_state["show_results"] = False
-
-def restart_session_state_vars():
-    st.session_state.last_population_path = ''
-    st.session_state.last_logbook_path = ''
-    st.session_state.show_results = False
-    
-def set_session_state_vars(last_population_path_param, last_logbook_path_param, show_results_param):
-    st.session_state.last_population_path = last_population_path_param
-    st.session_state.last_logbook_path = last_logbook_path_param
-    st.session_state.show_results = show_results_param
-
-col1, col2 = st.columns([0.3, 0.7])
+# Input file section - uploader
 with col1:
     input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
 
 if input_csv_file is not None:
-    
+
+    # Input file section - data editor
     df = pd.read_csv(input_csv_file)
     with col2:
         with st.expander("Review and/or edit your data"):
@@ -160,32 +40,40 @@ if input_csv_file is not None:
 
     st.divider()
 
-    target, algorithm, genetic_params = st.tabs(["Target", "Algorithm", "Genetic params"])
+    # Editable variables section
+    target_tab, algorithm_tab, genetic_params_tab = st.tabs(["Target", "Algorithm", "Genetic params"])
 
-    with target:
+    # Editable variables section - target
+    with target_tab:
         col1, col2 = st.columns(2)
 
         with col1:
             target = st.selectbox(
             'Which column do you want to use as target?',
             df.columns)
+            utils.set_target(target=target)
 
-            y = df[target]
-            x = df.drop(target, axis=1)
+            utils.set_y(y=df[target])
+            utils.set_x(x=df.drop(target, axis=1))
 
-    with algorithm:
+    # Editable variables section - algorithm
+    with algorithm_tab:
         col1, col2 = st.columns([0.3, 0.7])
 
+        # Get available algorithms from mloptimizer library
         optimizer_class_list = BaseOptimizer.get_subclasses(BaseOptimizer)
         optimizer_list = []
         for optimizer_item in optimizer_class_list:
             optimizer_list.append(optimizer_item.__name__)
 
+        # Select algorithm
         with col1:
             algorithm = st.radio(
                 "Which algorithm would you like to use?",
                 optimizer_list)
+            utils.set_algorithm(algorithm=algorithm)
         
+        # Algorithm hyper-parameters data editor
         with col2:
             use_custom_params = st.checkbox('Use custom params')
 
@@ -194,7 +82,7 @@ if input_csv_file is not None:
                 st.info("By default, parameters use ranges (they are not fixed). You can mark 'fixed' column of the parameters you want to set with a fixed value and set it in corresponding column.", icon="🤓")
 
                 edited_df = st.data_editor(
-                    get_dataframe(algorithm),
+                    utils.get_dataframe(),
                     hide_index=True,
                     use_container_width=True,
                     column_config={
@@ -209,57 +97,65 @@ if input_csv_file is not None:
                 fixed_rows = edited_df.loc[edited_df["use fixed"] == True]
                 range_rows = edited_df.loc[edited_df["use fixed"] == False]
 
-                set_custom_params(fixed_rows, range_rows)
+                utils.set_custom_params(fixed_rows=fixed_rows, range_rows=range_rows)
 
             else:
-                custom_params_diccionary = {}
-                custom_fixed_params_diccionary = {}
+                utils.delete_params_diccionaries()
 
-    with genetic_params:
+    # Editable variables section - genetic params
+    with genetic_params_tab:
         col1, col2 = st.columns(2)
 
+        # Select amount of individuals and generation
         with col1:
             individuals = st.select_slider(
                 'Select the amount of individuals',
                 range(2, 101),
-                value = individuals)
+                value = utils.get_individuals())
+            utils.set_individuals(individuals=individuals)
+
             generations = st.select_slider(
                 'Select the amount of generations',
                 range(2, 101),
-                value = generations)
-
-    inizialize_session_state_vars()
+                value = utils.get_generations())
+            utils.set_generations(generations=generations)
 
     st.divider()
 
+    # Restart state variables and execute
     if st.button('Start new execution'):
-        restart_session_state_vars()
-        optimizer = execute()
+        utils.restart_session_state_vars()
+        utils.execute()
 
+    # Results section
     if st.session_state.show_results is not False:
         st.write("Take a look at the optimization results below")
-        population, logbook, search_space = st.tabs(["Population", "LogBook", "Search Space"])
+        population_tab, logbook_tab, search_space_tab = st.tabs(["Population", "LogBook", "Search Space"])
 
-        optimizer_param_names = list(optimizer.get_params().keys())
+        # Set variables needed by mloptimizer library to generate graphics
+        optimizer_param_names = list(utils.get_optimizer_params_keys())
         optimizer_param_names.append("fitness")
-        population_df = optimizer.population_2_df()
+        population_df = utils.population_2_df()
 
-        with population:
+        # Results section - population: show and provide for downloading population resulting file
+        with population_tab:
             with open(st.session_state.last_population_path) as file:
-                download_files(population_path=st.session_state.last_population_path)
+                utils.download_files(population_path=st.session_state.last_population_path)
 
                 df_output = pd.read_csv(file)
                 st.dataframe(data=df_output, height=350, use_container_width=True)
                 file.seek(0)
-                
-        with logbook:
-            with open(st.session_state.last_logbook_path) as file:
-                download_files(logbook_path=st.session_state.last_logbook_path)
 
-                logbokk_graphic = plotly_logbook(optimizer.logbook, population_df)
+        # Results section - logbook: show logbook graphic and provide logbook resulting file for downloading
+        with logbook_tab:
+            with open(st.session_state.last_logbook_path) as file:
+                utils.download_files(logbook_path=st.session_state.last_logbook_path)
+
+                logbokk_graphic = plotly_logbook(utils.get_optimizer_logbook(), population_df)
                 st.plotly_chart(logbokk_graphic, use_container_width=True)
-        
-        with search_space:
+
+        # Results section - search space: show search space graphic
+        with search_space_tab:
                 dfp = population_df[optimizer_param_names]
                 search_space_graphic = plotly_search_space(dfp)
                 st.plotly_chart(search_space_graphic, use_container_width=True)

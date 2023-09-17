@@ -21,4 +21,4 @@ Take into account that Streamlit app uses port 8501 of your new container, and i
 4. You can now view the MLOptimizer App in your browser. Open your favorite browser and go to http://localhost:8000/
 
 ## Easy to use
-Forget about having to create python scripts, install and manage libraries on your machine, use the command line or have to modify unreadable code by hand. With this interface, you can easily upload your csv dataset and search for the best hyper-parameters for different cases, depending on the algorithm, the ranges of values or the values you decide to keep fixed.
+Forget about huge python scripts, maintenance of libraries on your machine and difficult commands of a CLI. With this GUI, you can easily upload your CSV dataset and search for the best hyper-parameters for different cases. You'll be able, for example, to choose between different algorithms, specify amount of generations and individuals, set ranges of values for the hyper-paramaters or even decide which ones you want to keep fixed.
