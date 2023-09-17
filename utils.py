@@ -18,6 +18,7 @@ class Utils:
         self.custom_params_diccionary = {}
         self.custom_fixed_params_diccionary = {}
         self.checkpoint = None
+        self.custom_seed = 0
     
     def get_target(self):
         return self.target
@@ -76,6 +77,12 @@ class Utils:
 
     def set_checkpoint(self, checkpoint):
         self.checkpoint = checkpoint
+
+    def get_custom_seed(self):
+        return self.custom_seed
+
+    def set_custom_seed(self, seed):
+        self.custom_seed = seed
 
     def set_optimizer_data(self, optimizer):
         data = {
@@ -143,7 +150,7 @@ class Utils:
         try:
             optimizer.optimize_clf(self.individuals, self.generations, self.checkpoint)
         except Exception as err:
-            st.error('Oops...Caparrini has to work more (but maybe you should check your input data, selected target, amount of individuals and generations...)', icon="🚨")
+            st.error('Oops...sorry, something didn\'t go as expected. Please, check your input data (read correspondent algorithm doc) and selected params)', icon="🚨")
             name = type(err).__name__
             st.error(name + ': ' + str(err))
         else:
@@ -162,7 +169,7 @@ class Utils:
         watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
 
     def execute(self):
-        optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary)')
+        optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary, seed=self.custom_seed)')
 
         thread_1 = Thread(target=self.optimize, args=[optimizer])
         add_script_run_ctx(thread_1)
