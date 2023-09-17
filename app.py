@@ -89,7 +89,10 @@ if input_csv_file is not None:
                         "fixed value": st.column_config.NumberColumn(),
                         "range min": st.column_config.NumberColumn(),
                         "range max": st.column_config.NumberColumn(),
-                        "denominator": st.column_config.NumberColumn()
+                        "denominator": st.column_config.NumberColumn(
+                            label="denominator	   ℹ️",
+                            help="Denominator value to divide the hyper-parameter value by. It applies only when the 'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it does not apply."
+                            )
                     },
                     disabled=("hyper-param", "type")
                 )
@@ -98,13 +101,12 @@ if input_csv_file is not None:
                 range_rows = edited_df.loc[edited_df["use fixed"] == False]
 
                 utils.set_custom_params(fixed_rows=fixed_rows, range_rows=range_rows)
-
             else:
                 utils.delete_params_diccionaries()
 
     # Editable variables section - genetic params
     with genetic_params_tab:
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns([0.5, 0.3, 0.2])
 
         # Select amount of individuals and generation
         with col1:
@@ -120,6 +122,21 @@ if input_csv_file is not None:
                 value = utils.get_generations())
             utils.set_generations(generations=generations)
 
+        # Customizable value of random seed
+        with col2:
+            use_custom_seed = st.checkbox('Set custom Python Random seed')
+
+            if use_custom_seed:
+                custom_seed = st.number_input(
+                    label='Insert the value you want to initialize the random number generator in Python (seed):',
+                    min_value=0,
+                    value=1,
+                    step=1,
+                    format="%d")
+                utils.set_custom_seed(seed=custom_seed)
+            else:
+                utils.set_custom_seed(seed=0)
+
     st.divider()
 
     # Restart state variables and execute
@@ -130,7 +147,7 @@ if input_csv_file is not None:
     # Results section
     if st.session_state.show_results is not False:
         st.write("Take a look at the optimization results below")
-        population_tab, logbook_tab, search_space_tab = st.tabs(["Population", "LogBook", "Search Space"])
+        population_tab, evolution_tab, search_space_tab = st.tabs(["Population", "Evolution", "Search Space"])
 
         # Set variables needed by mloptimizer library to generate graphics
         optimizer_param_names = list(utils.get_optimizer_params_keys())
@@ -146,8 +163,8 @@ if input_csv_file is not None:
                 st.dataframe(data=df_output, height=350, use_container_width=True)
                 file.seek(0)
 
-        # Results section - logbook: show logbook graphic and provide logbook resulting file for downloading
-        with logbook_tab:
+        # Results section - evolution: show evolution graphic and provide logbook resulting file for downloading
+        with evolution_tab:
             with open(st.session_state.last_logbook_path) as file:
                 utils.download_files(logbook_path=st.session_state.last_logbook_path)
 
