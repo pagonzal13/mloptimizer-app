@@ -24,19 +24,38 @@ utils = Utils()
 utils.inizialize_session_state_vars()
 
 # Input file section
-col1, col2 = st.columns([0.4, 0.6])
+st.write("You can try MLOptimizer UI with our input example or start using it with your own input dataset")
 
-# Input file section - uploader
+col1, col2 = st.columns([0.3, 0.7])
 with col1:
-    input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
+#TO DO: tanto el botón como el uploader deben quedad disabled después de ser usados
+    # Input file section - example data
+    if st.session_state.use_custom_input is not False and st.button('Try with our example'):
+        utils.set_use_custom_input(use_custom_input=True)
+        utils.set_show_main_section(show_main_section=True)
 
-if input_csv_file is not None:
+    # Input file section - uploader
+    if st.session_state.use_custom_input is not True:
+        input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
+        if input_csv_file is not None:
+            utils.set_use_custom_input(use_custom_input=False)
+            utils.set_show_main_section(show_main_section=True)
 
-    # Input file section - data editor
-    df = pd.read_csv(input_csv_file)
-    with col2:
-        with st.expander("Review and/or edit your data"):
-            st.data_editor(df, use_container_width=True)
+if st.session_state.show_main_section:
+    if st.session_state.use_custom_input:
+        with open('iris.csv', "r") as iris_file:
+            df = pd.read_csv(iris_file)
+            # Input file section - show data
+        with col2:
+            with st.expander("Take a look at input data"):
+                st.dataframe(df, use_container_width=True)
+    else:
+        df = pd.read_csv(input_csv_file)
+
+        # Input file section - data editor
+        with col2:
+            with st.expander("Review and/or edit your data"):
+                st.data_editor(df, use_container_width=True)
 
     st.divider()
 
@@ -69,13 +88,15 @@ if input_csv_file is not None:
         # Select algorithm
         with col1:
             algorithm = st.radio(
-                "Which algorithm would you like to use?",
-                optimizer_list)
+                label="Which algorithm would you like to use?",
+                options=optimizer_list
+                #captions=["aaa", "bbb", "ccc"]
+                )
             utils.set_algorithm(algorithm=algorithm)
         
         # Algorithm hyper-parameters data editor
         with col2:
-            use_custom_params = st.checkbox('Use custom params')
+            use_custom_params = st.toggle('Use custom params')
 
             if use_custom_params:
                 st.write("Edit the table below with the hyper-params values you want")
@@ -90,7 +111,7 @@ if input_csv_file is not None:
                         "range min": st.column_config.NumberColumn(),
                         "range max": st.column_config.NumberColumn(),
                         "denominator": st.column_config.NumberColumn(
-                            label="denominator	   ℹ️",
+                            label="denominator 📎",
                             help="Denominator value to divide the hyper-parameter value by. It applies only when the 'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it does not apply."
                             )
                     },
@@ -124,7 +145,7 @@ if input_csv_file is not None:
 
         # Customizable value of random seed
         with col2:
-            use_custom_seed = st.checkbox('Set custom Python Random seed')
+            use_custom_seed = st.toggle('Set custom Python Random seed')
 
             if use_custom_seed:
                 custom_seed = st.number_input(

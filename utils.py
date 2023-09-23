@@ -155,7 +155,7 @@ class Utils:
             st.error(name + ': ' + str(err))
         else:
             st.success('Optimization has been successfully generated!', icon="✅")
-            self.set_session_state_vars(
+            self.set_session_results_state_vars(
                 last_population_path_param = os.path.join(optimizer.results_path, "populations.csv"),
                 last_logbook_path_param = os.path.join(optimizer.results_path, "logbook.csv"),
                 show_results_param = True
@@ -205,6 +205,12 @@ class Utils:
         if "optimizer_data" not in st.session_state:
             st.session_state["optimizer_data"] = None
 
+        if "use_custom_input" not in st.session_state:
+            st.session_state["use_custom_input"] = None
+
+        if "show_main_section" not in st.session_state:
+            st.session_state["show_main_section"] = False
+
         if "last_population_path" not in st.session_state:
             st.session_state["last_population_path"] = ''
 
@@ -216,11 +222,19 @@ class Utils:
 
     def restart_session_state_vars(self):
         st.session_state.optimizer_data = None
+        st.session_state.use_custom_input = None
+        st.session_state.show_main_section = False
         st.session_state.last_population_path = ''
         st.session_state.last_logbook_path = ''
         st.session_state.show_results = False
         
-    def set_session_state_vars(self, last_population_path_param, last_logbook_path_param, show_results_param):
+    def set_session_results_state_vars(self, last_population_path_param, last_logbook_path_param, show_results_param):
         st.session_state.last_population_path = last_population_path_param
         st.session_state.last_logbook_path = last_logbook_path_param
         st.session_state.show_results = show_results_param
+
+    def set_use_custom_input(self, use_custom_input):
+        st.session_state.use_custom_input = use_custom_input
+
+    def set_show_main_section(self, show_main_section):
+        st.session_state.show_main_section = show_main_section
