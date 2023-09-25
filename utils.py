@@ -170,8 +170,7 @@ class Utils:
         watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
 
     def execute(self):
-        #optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary, seed=self.custom_seed)')
-        optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary)')
+        optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary, seed=self.custom_seed)')
 
         thread_1 = Thread(target=self.optimize, args=[optimizer])
         add_script_run_ctx(thread_1)
