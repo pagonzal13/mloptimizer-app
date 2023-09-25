@@ -19,6 +19,7 @@ class Utils:
         self.custom_fixed_params_diccionary = {}
         self.checkpoint = None
         self.custom_seed = 0
+        self.inizialize_session_state_vars()
     
     def get_target(self):
         return self.target
@@ -169,7 +170,8 @@ class Utils:
         watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
 
     def execute(self):
-        optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary, seed=self.custom_seed)')
+        #optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary, seed=self.custom_seed)')
+        optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary)')
 
         thread_1 = Thread(target=self.optimize, args=[optimizer])
         add_script_run_ctx(thread_1)
@@ -208,9 +210,6 @@ class Utils:
         if "use_custom_input" not in st.session_state:
             st.session_state["use_custom_input"] = None
 
-        if "show_main_section" not in st.session_state:
-            st.session_state["show_main_section"] = False
-
         if "last_population_path" not in st.session_state:
             st.session_state["last_population_path"] = ''
 
@@ -221,9 +220,8 @@ class Utils:
             st.session_state["show_results"] = False
 
     def restart_session_state_vars(self):
+        #TO DO: si esta función se llama de forma genérica, entonces debería cubrir también caso del use_custom_input. Probar qué pasa y si no pasar todos por param y resetear sólo los que se pidan
         st.session_state.optimizer_data = None
-        st.session_state.use_custom_input = None
-        st.session_state.show_main_section = False
         st.session_state.last_population_path = ''
         st.session_state.last_logbook_path = ''
         st.session_state.show_results = False
@@ -235,6 +233,3 @@ class Utils:
 
     def set_use_custom_input(self, use_custom_input):
         st.session_state.use_custom_input = use_custom_input
-
-    def set_show_main_section(self, show_main_section):
-        st.session_state.show_main_section = show_main_section

@@ -21,7 +21,6 @@ st.divider()
 
 # Inizialization (Utils is class with methods to manage optimizer and editable variables)
 utils = Utils()
-utils.inizialize_session_state_vars()
 
 # Input file section
 st.write("You can try MLOptimizer UI with our input example or start using it with your own input dataset")
@@ -32,16 +31,14 @@ with col1:
     # Input file section - example data
     if st.session_state.use_custom_input is not False and st.button('Try with our example'):
         utils.set_use_custom_input(use_custom_input=True)
-        utils.set_show_main_section(show_main_section=True)
 
     # Input file section - uploader
     if st.session_state.use_custom_input is not True:
         input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
         if input_csv_file is not None:
             utils.set_use_custom_input(use_custom_input=False)
-            utils.set_show_main_section(show_main_section=True)
 
-if st.session_state.show_main_section:
+if st.session_state.use_custom_input is not None:
     if st.session_state.use_custom_input:
         with open('iris.csv', "r") as iris_file:
             df = pd.read_csv(iris_file)
@@ -87,10 +84,15 @@ if st.session_state.show_main_section:
 
         # Select algorithm
         with col1:
+            base_doc_url = "https://mloptimizer.readthedocs.io/en/latest/mloptimizer.test.html#module-mloptimizer.test.test_"
+            optimizer_docu_list = []
+            for method in optimizer_list:
+                optimizer_docu_list.append("see "+method+" [docu]("+base_doc_url+method+")")
+
             algorithm = st.radio(
                 label="Which algorithm would you like to use?",
-                options=optimizer_list
-                #captions=["aaa", "bbb", "ccc"]
+                options=optimizer_list,
+                captions=optimizer_docu_list
                 )
             utils.set_algorithm(algorithm=algorithm)
         
