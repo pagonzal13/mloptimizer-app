@@ -156,7 +156,7 @@ class Utils:
             st.error(name + ': ' + str(err))
         else:
             st.success('Optimization has been successfully generated!', icon="✅")
-            self.set_session_results_state_vars(
+            self.set_session_state_results_vars(
                 last_population_path_param = os.path.join(optimizer.results_path, "populations.csv"),
                 last_logbook_path_param = os.path.join(optimizer.results_path, "logbook.csv"),
                 show_results_param = True
@@ -206,8 +206,8 @@ class Utils:
         if "optimizer_data" not in st.session_state:
             st.session_state["optimizer_data"] = None
 
-        if "use_custom_input" not in st.session_state:
-            st.session_state["use_custom_input"] = None
+        if "input_data_frame" not in st.session_state:
+            st.session_state["input_data_frame"] = None
 
         if "last_population_path" not in st.session_state:
             st.session_state["last_population_path"] = ''
@@ -219,16 +219,16 @@ class Utils:
             st.session_state["show_results"] = False
 
     def restart_session_state_vars(self):
-        #TO DO: si esta función se llama de forma genérica, entonces debería cubrir también caso del use_custom_input. Probar qué pasa y si no pasar todos por param y resetear sólo los que se pidan
         st.session_state.optimizer_data = None
+        st.session_state.input_data_frame = None
         st.session_state.last_population_path = ''
         st.session_state.last_logbook_path = ''
         st.session_state.show_results = False
         
-    def set_session_results_state_vars(self, last_population_path_param, last_logbook_path_param, show_results_param):
+    def set_session_state_results_vars(self, last_population_path_param = '', last_logbook_path_param = '', show_results_param = False):
         st.session_state.last_population_path = last_population_path_param
         st.session_state.last_logbook_path = last_logbook_path_param
         st.session_state.show_results = show_results_param
 
-    def set_use_custom_input(self, use_custom_input):
-        st.session_state.use_custom_input = use_custom_input
+    def set_input_data_frame(self, input_data_frame):
+        st.session_state.input_data_frame = input_data_frame

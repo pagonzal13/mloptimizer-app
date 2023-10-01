@@ -7,6 +7,10 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 from watcher import *
 from utils import *
 
+###########################################################################################################################
+############################################## MAIN FRONT-END ELEMENTS ####################################################
+###########################################################################################################################
+
 # Config
 st.set_page_config(
     page_title="MLOptimizer UI",
@@ -22,40 +26,39 @@ st.divider()
 # Inizialization (Utils is class with methods to manage optimizer and editable variables)
 utils = Utils()
 
+###########################################################################################################################
+
 # Input file section
-st.write("You can try MLOptimizer UI with our input example or start using it with your own input dataset")
+st.write("You can try MLOptimizer UI with a dummy example or start using it with your own input dataset")
+use_custom_input = st.toggle('Try with our example')
 
-col1, col2 = st.columns([0.3, 0.7])
-with col1:
-#TO DO: tanto el botón como el uploader deben quedad disabled después de ser usados
-    # Input file section - example data
-    if st.session_state.use_custom_input is not False and st.button('Try with our example'):
-        utils.set_use_custom_input(use_custom_input=True)
-
-    # Input file section - uploader
-    if st.session_state.use_custom_input is not True:
-        input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
+if use_custom_input:
+    utils.restart_session_state_vars()
+    with open('iris.csv', "r") as iris_file:
+        df = pd.read_csv(iris_file)
+        utils.set_input_data_frame(input_data_frame=df)
+        # Example file section - show data
+        with st.expander("Take a look at input data"):
+            st.dataframe(df, use_container_width=True)
+else:
+    col1, col2 = st.columns([0.3, 0.7])
+    with col1:
+        input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).') 
         if input_csv_file is not None:
-            utils.set_use_custom_input(use_custom_input=False)
+            # Input file section - data editor
+            df = pd.read_csv(input_csv_file)
+            utils.set_input_data_frame(input_data_frame=df)
+            with col2:
+                with st.expander("Review and/or edit your data"):
+                    st.data_editor(df, use_container_width=True)
+        else:
+            utils.restart_session_state_vars()
 
-if st.session_state.use_custom_input is not None:
-    if st.session_state.use_custom_input:
-        with open('iris.csv', "r") as iris_file:
-            df = pd.read_csv(iris_file)
-            # Input file section - show data
-        with col2:
-            with st.expander("Take a look at input data"):
-                st.dataframe(df, use_container_width=True)
-    else:
-        df = pd.read_csv(input_csv_file)
+st.divider()
 
-        # Input file section - data editor
-        with col2:
-            with st.expander("Review and/or edit your data"):
-                st.data_editor(df, use_container_width=True)
+###########################################################################################################################
 
-    st.divider()
-
+if st.session_state.input_data_frame is not None:
     # Editable variables section
     target_tab, algorithm_tab, genetic_params_tab = st.tabs(["Target", "Algorithm", "Genetic params"])
 
@@ -162,10 +165,14 @@ if st.session_state.use_custom_input is not None:
 
     st.divider()
 
+###########################################################################################################################
+
     # Restart state variables and execute
     if st.button('Start new execution'):
         utils.restart_session_state_vars()
         utils.execute()
+
+###########################################################################################################################
 
     # Results section
     if st.session_state.show_results is not False:
@@ -199,3 +206,5 @@ if st.session_state.use_custom_input is not None:
                 dfp = population_df[optimizer_param_names]
                 search_space_graphic = plotly_search_space(dfp)
                 st.plotly_chart(search_space_graphic, use_container_width=True)
+
+###########################################################################################################################
