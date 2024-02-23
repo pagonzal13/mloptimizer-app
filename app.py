@@ -7,6 +7,10 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 from watcher import *
 from utils import *
 
+###########################################################################################################################
+############################################## MAIN FRONT-END ELEMENTS ####################################################
+###########################################################################################################################
+
 # Config
 st.set_page_config(
     page_title="MLOptimizer UI",
@@ -21,25 +25,40 @@ st.divider()
 
 # Inizialization (Utils is class with methods to manage optimizer and editable variables)
 utils = Utils()
-utils.inizialize_session_state_vars()
+
+###########################################################################################################################
 
 # Input file section
-col1, col2 = st.columns([0.4, 0.6])
+st.write("You can try MLOptimizer UI with a dummy example or start using it with your own input dataset")
+use_custom_input = st.toggle('Try with our example')
 
-# Input file section - uploader
-with col1:
-    input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).')
+if use_custom_input:
+    utils.restart_session_state_vars()
+    with open('iris.csv', "r") as iris_file:
+        df = pd.read_csv(iris_file)
+        utils.set_input_data_frame(input_data_frame=df)
+        # Example file section - show data
+        with st.expander("Take a look at input data"):
+            st.dataframe(df, use_container_width=True)
+else:
+    col1, col2 = st.columns([0.3, 0.7])
+    with col1:
+        input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).') 
+        if input_csv_file is not None:
+            # Input file section - data editor
+            df = pd.read_csv(input_csv_file)
+            utils.set_input_data_frame(input_data_frame=df)
+            with col2:
+                with st.expander("Review and/or edit your data"):
+                    st.data_editor(df, use_container_width=True)
+        else:
+            utils.restart_session_state_vars()
 
-if input_csv_file is not None:
+st.divider()
 
-    # Input file section - data editor
-    df = pd.read_csv(input_csv_file)
-    with col2:
-        with st.expander("Review and/or edit your data"):
-            st.data_editor(df, use_container_width=True)
+###########################################################################################################################
 
-    st.divider()
-
+if st.session_state.input_data_frame is not None:
     # Editable variables section
     target_tab, algorithm_tab, genetic_params_tab = st.tabs(["Target", "Algorithm", "Genetic params"])
 
@@ -62,20 +81,30 @@ if input_csv_file is not None:
 
         # Get available algorithms from mloptimizer library
         optimizer_class_list = BaseOptimizer.get_subclasses(BaseOptimizer)
-        optimizer_list = []
+        optimizer_class_name_list = []
         for optimizer_item in optimizer_class_list:
-            optimizer_list.append(optimizer_item.__name__)
+            optimizer_class_name_list.append(optimizer_item.__name__)
 
         # Select algorithm
         with col1:
+            optimizer_docu_list = []
+
+            for method in optimizer_class_name_list:
+                method_group_name = "trees" #TO DO: this should come from the library, same way that __name__ does
+                group_docu_url = f"https://mloptimizer.readthedocs.io/en/master/autoapi/mloptimizer/genoptimizer/{method_group_name}/index.html"
+                optimizer_docu_list.append("more about ["+method_group_name+"]("+group_docu_url+")")
+
             algorithm = st.radio(
-                "Which algorithm would you like to use?",
-                optimizer_list)
+                label="Which algorithm would you like to use?",
+                options=optimizer_class_name_list,
+                captions=optimizer_docu_list,
+                format_func=lambda class_name: class_name.split("Optimizer")[0]
+                )
             utils.set_algorithm(algorithm=algorithm)
         
         # Algorithm hyper-parameters data editor
         with col2:
-            use_custom_params = st.checkbox('Use custom params')
+            use_custom_params = st.toggle('Use custom params')
 
             if use_custom_params:
                 st.write("Edit the table below with the hyper-params values you want")
@@ -89,7 +118,10 @@ if input_csv_file is not None:
                         "fixed value": st.column_config.NumberColumn(),
                         "range min": st.column_config.NumberColumn(),
                         "range max": st.column_config.NumberColumn(),
-                        "denominator": st.column_config.NumberColumn()
+                        "denominator": st.column_config.NumberColumn(
+                            label="denominator 📎",
+                            help="Denominator value to divide the hyper-parameter value by. It applies only when the 'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it does not apply."
+                            )
                     },
                     disabled=("hyper-param", "type")
                 )
@@ -98,13 +130,12 @@ if input_csv_file is not None:
                 range_rows = edited_df.loc[edited_df["use fixed"] == False]
 
                 utils.set_custom_params(fixed_rows=fixed_rows, range_rows=range_rows)
-
             else:
                 utils.delete_params_diccionaries()
 
     # Editable variables section - genetic params
     with genetic_params_tab:
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns([0.5, 0.3, 0.2])
 
         # Select amount of individuals and generation
         with col1:
@@ -120,17 +151,36 @@ if input_csv_file is not None:
                 value = utils.get_generations())
             utils.set_generations(generations=generations)
 
+        # Customizable value of random seed
+        with col2:
+            use_custom_seed = st.toggle('Set custom Python Random seed')
+
+            if use_custom_seed:
+                custom_seed = st.number_input(
+                    label='Insert the value you want to initialize the random number generator in Python (seed):',
+                    min_value=0,
+                    value=1,
+                    step=1,
+                    format="%d")
+                utils.set_custom_seed(seed=custom_seed)
+            else:
+                utils.set_custom_seed(seed=0)
+
     st.divider()
+
+###########################################################################################################################
 
     # Restart state variables and execute
     if st.button('Start new execution'):
         utils.restart_session_state_vars()
         utils.execute()
 
+###########################################################################################################################
+
     # Results section
     if st.session_state.show_results is not False:
         st.write("Take a look at the optimization results below")
-        population_tab, logbook_tab, search_space_tab = st.tabs(["Population", "LogBook", "Search Space"])
+        population_tab, evolution_tab, search_space_tab = st.tabs(["Population", "Evolution", "Search Space"])
 
         # Set variables needed by mloptimizer library to generate graphics
         optimizer_param_names = list(utils.get_optimizer_params_keys())
@@ -146,8 +196,8 @@ if input_csv_file is not None:
                 st.dataframe(data=df_output, height=350, use_container_width=True)
                 file.seek(0)
 
-        # Results section - logbook: show logbook graphic and provide logbook resulting file for downloading
-        with logbook_tab:
+        # Results section - evolution: show evolution graphic and provide logbook resulting file for downloading
+        with evolution_tab:
             with open(st.session_state.last_logbook_path) as file:
                 utils.download_files(logbook_path=st.session_state.last_logbook_path)
 
@@ -159,3 +209,5 @@ if input_csv_file is not None:
                 dfp = population_df[optimizer_param_names]
                 search_space_graphic = plotly_search_space(dfp)
                 st.plotly_chart(search_space_graphic, use_container_width=True)
+
+###########################################################################################################################
