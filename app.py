@@ -81,23 +81,24 @@ if st.session_state.input_data_frame is not None:
 
         # Get available algorithms from mloptimizer library
         optimizer_class_list = BaseOptimizer.get_subclasses(BaseOptimizer)
-        optimizer_list = []
+        optimizer_class_name_list = []
         for optimizer_item in optimizer_class_list:
-            optimizer_list.append(optimizer_item.__name__)
+            optimizer_class_name_list.append(optimizer_item.__name__)
 
         # Select algorithm
         with col1:
-            base_doc_url = "https://mloptimizer.readthedocs.io/en/latest/mloptimizer.test.html#module-mloptimizer.test.test_"
             optimizer_docu_list = []
-            for method in optimizer_list:
-                #TO DO: hacer esto bien y no inventarmelo con lo de php
-                method_name = strim(method, "Optimizer")
-                optimizer_docu_list.append("see "+method_name[0]+" [docu]("+base_doc_url+method+")")
+
+            for method in optimizer_class_name_list:
+                method_group_name = "trees" #TO DO: this should come from the library, same way that __name__ does
+                group_docu_url = f"https://mloptimizer.readthedocs.io/en/master/autoapi/mloptimizer/genoptimizer/{method_group_name}/index.html"
+                optimizer_docu_list.append("more about ["+method_group_name+"]("+group_docu_url+")")
 
             algorithm = st.radio(
                 label="Which algorithm would you like to use?",
-                options=optimizer_list,
-                captions=optimizer_docu_list
+                options=optimizer_class_name_list,
+                captions=optimizer_docu_list,
+                format_func=lambda class_name: class_name.split("Optimizer")[0]
                 )
             utils.set_algorithm(algorithm=algorithm)
         
