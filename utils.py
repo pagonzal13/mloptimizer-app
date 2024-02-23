@@ -15,8 +15,8 @@ class Utils:
         self.generations = 10
         self.x = [[]]
         self.y = []
-        self.custom_params_diccionary = {}
-        self.custom_fixed_params_diccionary = {}
+        self.custom_hyperparams_diccionary = {}
+        self.custom_fixed_hyperparams_diccionary = {}
         self.checkpoint = None
         self.custom_seed = 0
         self.inizialize_session_state_vars()
@@ -57,21 +57,21 @@ class Utils:
     def set_y(self, y):
         self.y = y
 
-    def get_custom_params_diccionary(self):
-        return self.custom_params_diccionary
+    def get_custom_hyperparams_diccionary(self):
+        return self.custom_hyperparams_diccionary
 
-    def set_custom_params_diccionary(self, custom_params_diccionary):
-        self.custom_params_diccionary = custom_params_diccionary
+    def set_custom_hyperparams_diccionary(self, custom_hyperparams_diccionary):
+        self.custom_hyperparams_diccionary = custom_hyperparams_diccionary
 
-    def get_custom_fixed_params_diccionary(self):
-        return self.custom_fixed_params_diccionary
+    def get_custom_fixed_hyperparams_diccionary(self):
+        return self.custom_fixed_hyperparams_diccionary
 
-    def set_custom_fixed_params_diccionary(self, custom_fixed_params_diccionary):
-        self.custom_fixed_params_diccionary = custom_fixed_params_diccionary
+    def set_custom_fixed_hyperparams_diccionary(self, custom_fixed_hyperparams_diccionary):
+        self.custom_fixed_hyperparams_diccionary = custom_fixed_hyperparams_diccionary
 
-    def delete_params_diccionaries(self):
-        self.custom_params_diccionary = {}
-        self.custom_fixed_params_diccionary = {}
+    def delete_hyperparams_diccionaries(self):
+        self.custom_hyperparams_diccionary = {}
+        self.custom_fixed_hyperparams_diccionary = {}
 
     def get_checkpoint(self):
         return self.checkpoint
@@ -87,14 +87,14 @@ class Utils:
 
     def set_optimizer_data(self, optimizer):
         data = {
-            "params_keys": optimizer.get_params().keys(),
+            "hyperparams_keys": optimizer.get_hyperparams().keys(),
             "population_df": optimizer.population_2_df(),
             "logbook": optimizer.logbook
         }
         st.session_state.optimizer_data = data
     
-    def get_optimizer_params_keys(self):
-        return st.session_state.optimizer_data["params_keys"]
+    def get_optimizer_hyperparams_keys(self):
+        return st.session_state.optimizer_data["hyperparams_keys"]
     
     def population_2_df(self):
         return st.session_state.optimizer_data["population_df"]
@@ -105,14 +105,14 @@ class Utils:
     def get_dataframe(self):
         df = pd.DataFrame()
 
-        for param_name, param_obj in eval(self.algorithm).get_default_params().items():
+        for param_name, param_obj in eval(self.algorithm).get_default_hyperparams().items():
             denominator = None
             if param_obj.type.__name__ == "float":
                 denominator = param_obj.denominator
 
             param_row = pd.DataFrame(
                     {
-                        'hyper-param': [param_obj.name],
+                        'hyperparam': [param_obj.name],
                         'type': [param_obj.type.__name__],
                         'use fixed': [False],
                         'fixed value': [None],
@@ -132,26 +132,26 @@ class Utils:
             else:
                 return param
 
-    def set_custom_params(self, fixed_rows, range_rows):
+    def set_custom_hyperparams(self, fixed_rows, range_rows):
         for i in range(len(fixed_rows)):
-            self.custom_fixed_params_diccionary[fixed_rows.iloc[i]["hyper-param"]] = fixed_rows.iloc[i]["fixed value"]
+            self.custom_fixed_hyperparams_diccionary[fixed_rows.iloc[i]["hyperparam"]] = fixed_rows.iloc[i]["fixed value"]
 
         for i in range(len(range_rows)):
-            param_name = range_rows.iloc[i]["hyper-param"]
+            param_name = range_rows.iloc[i]["hyperparam"]
             param_type = self.get_param_type(range_rows.iloc[i]["type"])
             param_min = range_rows.iloc[i]["range min"]
             param_max = range_rows.iloc[i]["range max"]
             param_denominator = range_rows.iloc[i]["denominator"]
 
-            param = Param(param_name, param_min, param_max, param_type, param_denominator)
+            param = Hyperparam(param_name, param_min, param_max, param_type, param_denominator)
 
-            self.custom_params_diccionary[param_name] = param
+            self.custom_hyperparams_diccionary[param_name] = param
 
     def optimize(self, optimizer):
         try:
             optimizer.optimize_clf(self.individuals, self.generations, self.checkpoint)
         except Exception as err:
-            st.error('Oops...sorry, something didn\'t go as expected. Please, check your input data (read correspondent algorithm doc) and selected params)', icon="🚨")
+            st.error('Oops...sorry, something didn\'t go as expected. Please, check your input data (read correspondent algorithm doc) and selected hyperparams)', icon="🚨")
             name = type(err).__name__
             st.error(name + ': ' + str(err))
         else:
@@ -170,7 +170,7 @@ class Utils:
         watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
 
     def execute(self):
-        optimizer = eval(self.algorithm+'(self.x, self.y, custom_params=self.custom_params_diccionary, custom_fixed_params=self.custom_fixed_params_diccionary, seed=self.custom_seed)')
+        optimizer = eval(self.algorithm+'(self.x, self.y, custom_hyperparams=self.custom_hyperparams_diccionary, custom_fixed_hyperparams=self.custom_fixed_hyperparams_diccionary, seed=self.custom_seed)')
 
         thread_1 = Thread(target=self.optimize, args=[optimizer])
         add_script_run_ctx(thread_1)

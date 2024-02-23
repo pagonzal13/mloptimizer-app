@@ -1,4 +1,5 @@
 from mloptimizer.genoptimizer import *
+from mloptimizer.plots import plotly_search_space, plotly_logbook
 from sklearn.datasets import load_iris
 import streamlit as st
 import pandas as pd
@@ -20,7 +21,7 @@ st.set_page_config(
 
 # Title
 st.header('MLOptimizer UI')
-st.subheader('Find the best hyper-parameters for training your data!')
+st.subheader('Find the best hyperparameters for training your data!')
 st.divider()
 
 # Inizialization (Utils is class with methods to manage optimizer and editable variables)
@@ -88,12 +89,12 @@ if st.session_state.input_data_frame is not None:
         # Select algorithm
         with col1:
             optimizer_docu_list = []
-
+            
             for method in optimizer_class_name_list:
                 method_group_name = "trees" #TO DO: this should come from the library, same way that __name__ does
                 group_docu_url = f"https://mloptimizer.readthedocs.io/en/master/autoapi/mloptimizer/genoptimizer/{method_group_name}/index.html"
                 optimizer_docu_list.append("more about ["+method_group_name+"]("+group_docu_url+")")
-
+            
             algorithm = st.radio(
                 label="Which algorithm would you like to use?",
                 options=optimizer_class_name_list,
@@ -102,12 +103,12 @@ if st.session_state.input_data_frame is not None:
                 )
             utils.set_algorithm(algorithm=algorithm)
         
-        # Algorithm hyper-parameters data editor
+        # Algorithm hyperparameters data editor
         with col2:
-            use_custom_params = st.toggle('Use custom params')
+            use_custom_hyperparams = st.toggle('Use custom hyperparams')
 
-            if use_custom_params:
-                st.write("Edit the table below with the hyper-params values you want")
+            if use_custom_hyperparams:
+                st.write("Edit the table below with the hyperparams values you want")
                 st.info("By default, parameters use ranges (they are not fixed). You can mark 'fixed' column of the parameters you want to set with a fixed value and set it in corresponding column.", icon="🤓")
 
                 edited_df = st.data_editor(
@@ -120,18 +121,18 @@ if st.session_state.input_data_frame is not None:
                         "range max": st.column_config.NumberColumn(),
                         "denominator": st.column_config.NumberColumn(
                             label="denominator 📎",
-                            help="Denominator value to divide the hyper-parameter value by. It applies only when the 'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it does not apply."
+                            help="Denominator value to divide the hyperparameter value by. It applies only when the 'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it does not apply."
                             )
                     },
-                    disabled=("hyper-param", "type")
+                    disabled=("hyperparam", "type")
                 )
                 
                 fixed_rows = edited_df.loc[edited_df["use fixed"] == True]
                 range_rows = edited_df.loc[edited_df["use fixed"] == False]
 
-                utils.set_custom_params(fixed_rows=fixed_rows, range_rows=range_rows)
+                utils.set_custom_hyperparams(fixed_rows=fixed_rows, range_rows=range_rows)
             else:
-                utils.delete_params_diccionaries()
+                utils.delete_hyperparams_diccionaries()
 
     # Editable variables section - genetic params
     with genetic_params_tab:
@@ -183,7 +184,7 @@ if st.session_state.input_data_frame is not None:
         population_tab, evolution_tab, search_space_tab = st.tabs(["Population", "Evolution", "Search Space"])
 
         # Set variables needed by mloptimizer library to generate graphics
-        optimizer_param_names = list(utils.get_optimizer_params_keys())
+        optimizer_param_names = list(utils.get_optimizer_hyperparams_keys())
         optimizer_param_names.append("fitness")
         population_df = utils.population_2_df()
 
