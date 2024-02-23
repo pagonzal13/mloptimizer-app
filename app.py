@@ -90,7 +90,9 @@ if st.session_state.input_data_frame is not None:
             base_doc_url = "https://mloptimizer.readthedocs.io/en/latest/mloptimizer.test.html#module-mloptimizer.test.test_"
             optimizer_docu_list = []
             for method in optimizer_list:
-                optimizer_docu_list.append("see "+method+" [docu]("+base_doc_url+method+")")
+                #TO DO: hacer esto bien y no inventarmelo con lo de php
+                method_name = strim(method, "Optimizer")
+                optimizer_docu_list.append("see "+method_name[0]+" [docu]("+base_doc_url+method+")")
 
             algorithm = st.radio(
                 label="Which algorithm would you like to use?",
