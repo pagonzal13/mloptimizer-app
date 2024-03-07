@@ -35,7 +35,7 @@ use_custom_input = st.toggle('Try with our example')
 
 if use_custom_input:
     utils.restart_session_state_vars()
-    with open('iris.csv', "r") as iris_file:
+    with open('data/iris.csv', "r") as iris_file:
         df = pd.read_csv(iris_file)
         utils.set_input_data_frame(input_data_frame=df)
         # Example file section - show data
