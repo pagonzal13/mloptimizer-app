@@ -7,6 +7,7 @@ from threading import Thread
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 from watcher import *
 
+
 class Utils:
     def __init__(self):
         self.target = ''
@@ -15,12 +16,12 @@ class Utils:
         self.generations = 10
         self.x = [[]]
         self.y = []
-        self.custom_hyperparams_diccionary = {}
-        self.custom_fixed_hyperparams_diccionary = {}
+        self.custom_hyperparams_dictionary = {}
+        self.custom_fixed_hyperparams_dictionary = {}
         self.checkpoint = None
         self.custom_seed = 0
         self.inizialize_session_state_vars()
-    
+
     def get_target(self):
         return self.target
 
@@ -57,21 +58,21 @@ class Utils:
     def set_y(self, y):
         self.y = y
 
-    def get_custom_hyperparams_diccionary(self):
-        return self.custom_hyperparams_diccionary
+    def get_custom_hyperparams_dictionary(self):
+        return self.custom_hyperparams_dictionary
 
-    def set_custom_hyperparams_diccionary(self, custom_hyperparams_diccionary):
-        self.custom_hyperparams_diccionary = custom_hyperparams_diccionary
+    def set_custom_hyperparams_dictionary(self, custom_hyperparams_dictionary):
+        self.custom_hyperparams_dictionary = custom_hyperparams_dictionary
 
-    def get_custom_fixed_hyperparams_diccionary(self):
-        return self.custom_fixed_hyperparams_diccionary
+    def get_custom_fixed_hyperparams_dictionary(self):
+        return self.custom_fixed_hyperparams_dictionary
 
-    def set_custom_fixed_hyperparams_diccionary(self, custom_fixed_hyperparams_diccionary):
-        self.custom_fixed_hyperparams_diccionary = custom_fixed_hyperparams_diccionary
+    def set_custom_fixed_hyperparams_dictionary(self, custom_fixed_hyperparams_dictionary):
+        self.custom_fixed_hyperparams_dictionary = custom_fixed_hyperparams_dictionary
 
-    def delete_hyperparams_diccionaries(self):
-        self.custom_hyperparams_diccionary = {}
-        self.custom_fixed_hyperparams_diccionary = {}
+    def delete_hyperparams_dictionaries(self):
+        self.custom_hyperparams_dictionary = {}
+        self.custom_fixed_hyperparams_dictionary = {}
 
     def get_checkpoint(self):
         return self.checkpoint
@@ -92,13 +93,13 @@ class Utils:
             "logbook": optimizer.logbook
         }
         st.session_state.optimizer_data = data
-    
+
     def get_optimizer_hyperparams_keys(self):
         return st.session_state.optimizer_data["hyperparams_keys"]
-    
+
     def population_2_df(self):
         return st.session_state.optimizer_data["population_df"]
-    
+
     def get_optimizer_logbook(self):
         return st.session_state.optimizer_data["logbook"]
 
@@ -111,30 +112,31 @@ class Utils:
                 denominator = param_obj.denominator
 
             param_row = pd.DataFrame(
-                    {
-                        'hyperparam': [param_obj.name],
-                        'type': [param_obj.type.__name__],
-                        'use fixed': [False],
-                        'fixed value': [None],
-                        'range min': [param_obj.min_value],
-                        'range max': [param_obj.max_value],
-                        'denominator': [denominator]
-                    }
-                )
+                {
+                    'hyperparam': [param_obj.name],
+                    'type': [param_obj.type.__name__],
+                    'use fixed': [False],
+                    'fixed value': [None],
+                    'range min': [param_obj.min_value],
+                    'range max': [param_obj.max_value],
+                    'denominator': [denominator]
+                }
+            )
             df = pd.concat([df, param_row])
         return df
 
     def get_param_type(self, param):
-            if param == "int":
-                return int
-            elif param == "float":
-                return float
-            else:
-                return param
+        if param == "int":
+            return int
+        elif param == "float":
+            return float
+        else:
+            return param
 
     def set_custom_hyperparams(self, fixed_rows, range_rows):
         for i in range(len(fixed_rows)):
-            self.custom_fixed_hyperparams_diccionary[fixed_rows.iloc[i]["hyperparam"]] = fixed_rows.iloc[i]["fixed value"]
+            self.custom_fixed_hyperparams_dictionary[fixed_rows.iloc[i]["hyperparam"]] = fixed_rows.iloc[i][
+                "fixed value"]
 
         for i in range(len(range_rows)):
             param_name = range_rows.iloc[i]["hyperparam"]
@@ -145,21 +147,24 @@ class Utils:
 
             param = Hyperparam(param_name, param_min, param_max, param_type, param_denominator)
 
-            self.custom_hyperparams_diccionary[param_name] = param
+            self.custom_hyperparams_dictionary[param_name] = param
 
     def optimize(self, optimizer):
         try:
             optimizer.optimize_clf(self.individuals, self.generations, self.checkpoint)
         except Exception as err:
-            st.error('Oops...sorry, something didn\'t go as expected. Please, check your input data (read correspondent algorithm doc) and selected hyperparams)', icon="🚨")
+            st.error(
+                'Oops...sorry, something didn\'t go as expected. Please, check your input data (read correspondent '
+                'algorithm doc) and selected hyperparams)',
+                icon="🚨")
             name = type(err).__name__
             st.error(name + ': ' + str(err))
         else:
             st.success('Optimization has been successfully generated!', icon="✅")
             self.set_session_state_results_vars(
-                last_population_path_param = os.path.join(optimizer.results_path, "populations.csv"),
-                last_logbook_path_param = os.path.join(optimizer.results_path, "logbook.csv"),
-                show_results_param = True
+                last_population_path_param=os.path.join(optimizer.results_path, "populations.csv"),
+                last_logbook_path_param=os.path.join(optimizer.results_path, "logbook.csv"),
+                show_results_param=True
             )
 
     def genetic_status_bar(self, progress_path):
@@ -170,7 +175,10 @@ class Utils:
         watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
 
     def execute(self):
-        optimizer = eval(self.algorithm+'(self.x, self.y, custom_hyperparams=self.custom_hyperparams_diccionary, custom_fixed_hyperparams=self.custom_fixed_hyperparams_diccionary, seed=self.custom_seed)')
+        optimizer = eval(
+            self.algorithm + '(self.x, self.y, custom_hyperparams=self.custom_hyperparams_diccionary, '
+                             'custom_fixed_hyperparams=self.custom_fixed_hyperparams_diccionary, '
+                             'seed=self.custom_seed)')
 
         thread_1 = Thread(target=self.optimize, args=[optimizer])
         add_script_run_ctx(thread_1)
@@ -188,19 +196,19 @@ class Utils:
         if population_path != '':
             with open(population_path) as file:
                 btn_p = st.download_button(
-                        label="Download populations.csv",
-                        data=file,
-                        file_name="populations.csv",
-                        mime="text/csv"
-                    )
+                    label="Download populations.csv",
+                    data=file,
+                    file_name="populations.csv",
+                    mime="text/csv"
+                )
         if logbook_path != '':
             with open(logbook_path) as file:
                 btn_l = st.download_button(
-                        label="Download logbook.csv",
-                        data=file,
-                        file_name="logbook.csv",
-                        mime="text/csv"
-                    )
+                    label="Download logbook.csv",
+                    data=file,
+                    file_name="logbook.csv",
+                    mime="text/csv"
+                )
 
     def inizialize_session_state_vars(self):
         if "optimizer_data" not in st.session_state:
@@ -224,8 +232,9 @@ class Utils:
         st.session_state.last_population_path = ''
         st.session_state.last_logbook_path = ''
         st.session_state.show_results = False
-        
-    def set_session_state_results_vars(self, last_population_path_param = '', last_logbook_path_param = '', show_results_param = False):
+
+    def set_session_state_results_vars(self, last_population_path_param='', last_logbook_path_param='',
+                                       show_results_param=False):
         st.session_state.last_population_path = last_population_path_param
         st.session_state.last_logbook_path = last_logbook_path_param
         st.session_state.show_results = show_results_param

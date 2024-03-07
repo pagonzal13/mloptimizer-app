@@ -139,7 +139,7 @@ if st.session_state.input_data_frame is not None:
 
                 utils.set_custom_hyperparams(fixed_rows=fixed_rows, range_rows=range_rows)
             else:
-                utils.delete_hyperparams_diccionaries()
+                utils.delete_hyperparams_dictionaries()
 
     # Editable variables section - genetic params
     with genetic_params_tab:
