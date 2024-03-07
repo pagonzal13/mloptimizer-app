@@ -1,5 +1,7 @@
-from mloptimizer.genoptimizer import *
+from mloptimizer.genoptimizer import SklearnOptimizer
 from mloptimizer.plots import plotly_search_space, plotly_logbook
+from mloptimizer.alg_wrapper import CustomXGBClassifier
+from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
 from sklearn.datasets import load_iris
 import streamlit as st
 import pandas as pd
@@ -7,6 +9,12 @@ from threading import Thread
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 from watcher import *
 from utils import *
+import json
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from xgboost import XGBClassifier
+from sklearn.svm import SVC
 
 ###########################################################################################################################
 ############################################## MAIN FRONT-END ELEMENTS ####################################################
@@ -83,7 +91,10 @@ if st.session_state.input_data_frame is not None:
         col1, col2 = st.columns([0.3, 0.7])
 
         # Get available algorithms from mloptimizer library
-        optimizer_class_list = BaseOptimizer.get_subclasses(BaseOptimizer)
+        # optimizer_class_list = BaseOptimizer.get_subclasses(BaseOptimizer)
+        with open(HyperparameterSpace.default_hyperparameter_spaces_json, 'r') as file:
+            default_hyperparams = json.load(file)
+        optimizer_class_list = [globals()[x] for x in default_hyperparams.keys()]
         optimizer_class_name_list = []
         for optimizer_item in optimizer_class_list:
             optimizer_class_name_list.append(optimizer_item.__name__)

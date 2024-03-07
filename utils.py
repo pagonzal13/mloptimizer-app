@@ -1,4 +1,5 @@
-from mloptimizer.genoptimizer import *
+from mloptimizer.hyperparams import Hyperparam, HyperparameterSpace
+from mloptimizer.genoptimizer import SklearnOptimizer
 from sklearn.datasets import load_iris
 import streamlit as st
 import pandas as pd
@@ -6,6 +7,11 @@ import time, os, sys, traceback
 from threading import Thread
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 from watcher import *
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from xgboost import XGBClassifier
+from sklearn.svm import SVC
 
 
 class Utils:
@@ -88,7 +94,7 @@ class Utils:
 
     def set_optimizer_data(self, optimizer):
         data = {
-            "hyperparams_keys": optimizer.get_hyperparams().keys(),
+            "hyperparams_keys": optimizer.hyperparam_space.evolvable_hyperparams.keys(),
             "population_df": optimizer.population_2_df(),
             "logbook": optimizer.logbook
         }
@@ -106,20 +112,23 @@ class Utils:
     def get_dataframe(self):
         df = pd.DataFrame()
 
-        for param_name, param_obj in eval(self.algorithm).get_default_hyperparams().items():
-            denominator = None
-            if param_obj.type.__name__ == "float":
-                denominator = param_obj.denominator
+        # for param_name, param_obj in eval(self.algorithm).get_default_hyperparams().items():
+        hyperspace = HyperparameterSpace.get_default_hyperparameter_space(eval(self.algorithm))
+
+        for param_name, param_obj in hyperspace.evolvable_hyperparams.items():
+            scale = None
+            if param_obj.hyperparam_type == "float":
+                scale = param_obj.scale
 
             param_row = pd.DataFrame(
                 {
                     'hyperparam': [param_obj.name],
-                    'type': [param_obj.type.__name__],
+                    'hyperparam_type': [param_obj.hyperparam_type],
                     'use fixed': [False],
                     'fixed value': [None],
                     'range min': [param_obj.min_value],
                     'range max': [param_obj.max_value],
-                    'denominator': [denominator]
+                    'scale': [scale]
                 }
             )
             df = pd.concat([df, param_row])
@@ -140,10 +149,11 @@ class Utils:
 
         for i in range(len(range_rows)):
             param_name = range_rows.iloc[i]["hyperparam"]
-            param_type = self.get_param_type(range_rows.iloc[i]["type"])
+            # param_type = self.get_param_type(range_rows.iloc[i]["hyperparam_type"])
+            param_type = range_rows.iloc[i]["hyperparam_type"]
             param_min = range_rows.iloc[i]["range min"]
             param_max = range_rows.iloc[i]["range max"]
-            param_denominator = range_rows.iloc[i]["denominator"]
+            param_denominator = range_rows.iloc[i]["scale"]
 
             param = Hyperparam(param_name, param_min, param_max, param_type, param_denominator)
 
@@ -162,8 +172,8 @@ class Utils:
         else:
             st.success('Optimization has been successfully generated!', icon="✅")
             self.set_session_state_results_vars(
-                last_population_path_param=os.path.join(optimizer.results_path, "populations.csv"),
-                last_logbook_path_param=os.path.join(optimizer.results_path, "logbook.csv"),
+                last_population_path_param=os.path.join(optimizer.tracker.results_path, "populations.csv"),
+                last_logbook_path_param=os.path.join(optimizer.tracker.results_path, "logbook.csv"),
                 show_results_param=True
             )
 
@@ -175,10 +185,17 @@ class Utils:
         watch.run(watched_dir=progress_path, gen_progress_bar=bar_gen, indi_progress_bar=bar_indi)
 
     def execute(self):
-        optimizer = eval(
-            self.algorithm + '(self.x, self.y, custom_hyperparams=self.custom_hyperparams_diccionary, '
-                             'custom_fixed_hyperparams=self.custom_fixed_hyperparams_diccionary, '
-                             'seed=self.custom_seed)')
+        # optimizer = eval(
+        #     self.algorithm + '(self.x, self.y, custom_hyperparams=self.custom_hyperparams_diccionary, '
+        #                      'custom_fixed_hyperparams=self.custom_fixed_hyperparams_diccionary, '
+        #                      'seed=self.custom_seed)')
+        hyperspace_ex = HyperparameterSpace(evolvable_hyperparams=self.custom_hyperparams_dictionary,
+                                            fixed_hyperparams=self.custom_fixed_hyperparams_dictionary)
+        print(hyperspace_ex)
+        optimizer = SklearnOptimizer(clf_class=eval(self.algorithm),
+                                     hyperparam_space=hyperspace_ex,
+                                     features=self.x, labels=self.y, seed=self.custom_seed
+                                     )
 
         thread_1 = Thread(target=self.optimize, args=[optimizer])
         add_script_run_ctx(thread_1)
@@ -186,7 +203,7 @@ class Utils:
 
         time.sleep(0.1)
 
-        self.genetic_status_bar(os.path.join(optimizer.progress_path))
+        self.genetic_status_bar(os.path.join(optimizer.tracker.progress_path))
 
         thread_1.join()
 
