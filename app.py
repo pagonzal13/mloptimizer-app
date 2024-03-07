@@ -24,7 +24,7 @@ st.header('MLOptimizer UI')
 st.subheader('Find the best hyperparameters for training your data!')
 st.divider()
 
-# Inizialization (Utils is class with methods to manage optimizer and editable variables)
+# Initialization (Utils is class with methods to manage optimizer and editable variables)
 utils = Utils()
 
 ###########################################################################################################################
@@ -44,7 +44,9 @@ if use_custom_input:
 else:
     col1, col2 = st.columns([0.3, 0.7])
     with col1:
-        input_csv_file = st.file_uploader("Upload your input file", type='csv', help=':information_source: Pay attention to the quality of your input data (column names, types of values, consistency, etc).') 
+        input_csv_file = st.file_uploader("Upload your input file", type='csv',
+                                          help=':information_source: Pay attention to the quality of your input data '
+                                               '(column names, types of values, consistency, etc).')
         if input_csv_file is not None:
             # Input file section - data editor
             df = pd.read_csv(input_csv_file)
@@ -57,7 +59,7 @@ else:
 
 st.divider()
 
-###########################################################################################################################
+# #####################################################################################################################
 
 if st.session_state.input_data_frame is not None:
     # Editable variables section
@@ -69,8 +71,8 @@ if st.session_state.input_data_frame is not None:
 
         with col1:
             target = st.selectbox(
-            'Which column do you want to use as target?',
-            df.columns)
+                'Which column do you want to use as target?',
+                df.columns)
             utils.set_target(target=target)
 
             utils.set_y(y=df[target])
@@ -89,27 +91,30 @@ if st.session_state.input_data_frame is not None:
         # Select algorithm
         with col1:
             optimizer_docu_list = []
-            
+
             for method in optimizer_class_name_list:
-                method_group_name = "trees" #TO DO: this should come from the library, same way that __name__ does
+                method_group_name = "trees"  # TO DO: this should come from the library, same way that __name__ does
                 group_docu_url = f"https://mloptimizer.readthedocs.io/en/master/autoapi/mloptimizer/genoptimizer/{method_group_name}/index.html"
-                optimizer_docu_list.append("more about ["+method_group_name+"]("+group_docu_url+")")
-            
+                optimizer_docu_list.append("more about [" + method_group_name + "](" + group_docu_url + ")")
+
             algorithm = st.radio(
                 label="Which algorithm would you like to use?",
                 options=optimizer_class_name_list,
                 captions=optimizer_docu_list,
                 format_func=lambda class_name: class_name.split("Optimizer")[0]
-                )
+            )
             utils.set_algorithm(algorithm=algorithm)
-        
+
         # Algorithm hyperparameters data editor
         with col2:
             use_custom_hyperparams = st.toggle('Use custom hyperparams')
 
             if use_custom_hyperparams:
                 st.write("Edit the table below with the hyperparams values you want")
-                st.info("By default, parameters use ranges (they are not fixed). You can mark 'fixed' column of the parameters you want to set with a fixed value and set it in corresponding column.", icon="🤓")
+                st.info(
+                    "By default, parameters use ranges (they are not fixed). You can mark 'fixed' column of the "
+                    "parameters you want to set with a fixed value and set it in corresponding column.",
+                    icon="🤓")
 
                 edited_df = st.data_editor(
                     utils.get_dataframe(),
@@ -121,12 +126,14 @@ if st.session_state.input_data_frame is not None:
                         "range max": st.column_config.NumberColumn(),
                         "denominator": st.column_config.NumberColumn(
                             label="denominator 📎",
-                            help="Denominator value to divide the hyperparameter value by. It applies only when the 'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it does not apply."
-                            )
+                            help="Denominator value to divide the hyperparameter value by. It applies only when the "
+                                 "'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it "
+                                 "does not apply."
+                        )
                     },
                     disabled=("hyperparam", "type")
                 )
-                
+
                 fixed_rows = edited_df.loc[edited_df["use fixed"] == True]
                 range_rows = edited_df.loc[edited_df["use fixed"] == False]
 
@@ -143,13 +150,13 @@ if st.session_state.input_data_frame is not None:
             individuals = st.select_slider(
                 'Select the amount of individuals',
                 range(2, 101),
-                value = utils.get_individuals())
+                value=utils.get_individuals())
             utils.set_individuals(individuals=individuals)
 
             generations = st.select_slider(
                 'Select the amount of generations',
                 range(2, 101),
-                value = utils.get_generations())
+                value=utils.get_generations())
             utils.set_generations(generations=generations)
 
         # Customizable value of random seed
@@ -169,14 +176,14 @@ if st.session_state.input_data_frame is not None:
 
     st.divider()
 
-###########################################################################################################################
+    ###########################################################################################################################
 
     # Restart state variables and execute
     if st.button('Start new execution'):
         utils.restart_session_state_vars()
         utils.execute()
 
-###########################################################################################################################
+    ###########################################################################################################################
 
     # Results section
     if st.session_state.show_results is not False:
@@ -202,13 +209,13 @@ if st.session_state.input_data_frame is not None:
             with open(st.session_state.last_logbook_path) as file:
                 utils.download_files(logbook_path=st.session_state.last_logbook_path)
 
-                logbokk_graphic = plotly_logbook(utils.get_optimizer_logbook(), population_df)
-                st.plotly_chart(logbokk_graphic, use_container_width=True)
+                logbook_graphic = plotly_logbook(utils.get_optimizer_logbook(), population_df)
+                st.plotly_chart(logbook_graphic, use_container_width=True)
 
         # Results section - search space: show search space graphic
         with search_space_tab:
-                dfp = population_df[optimizer_param_names]
-                search_space_graphic = plotly_search_space(dfp)
-                st.plotly_chart(search_space_graphic, use_container_width=True)
+            dfp = population_df[optimizer_param_names]
+            search_space_graphic = plotly_search_space(dfp)
+            st.plotly_chart(search_space_graphic, use_container_width=True)
 
-###########################################################################################################################
+#######################################################################################################################
