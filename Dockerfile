@@ -1,4 +1,4 @@
-FROM python:3.10-alpine3.18
+FROM python:3.10.0-slim
 
 WORKDIR /mloptimizer
 
