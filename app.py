@@ -53,7 +53,7 @@ else:
     col1, col2 = st.columns([0.3, 0.7])
     with col1:
         input_csv_file = st.file_uploader("Upload your input file", type='csv',
-                                          help=':information_source: Pay attention to the quality of your input data '
+                                          help='⚠️ Pay attention to the quality of your input data '
                                                '(column names, types of values, consistency, etc).')
         if input_csv_file is not None:
             # Input file section - data editor
@@ -127,10 +127,10 @@ if st.session_state.input_data_frame is not None:
             use_custom_hyperparams = st.toggle('Use custom hyperparams')
 
             if use_custom_hyperparams:
-                st.write("Edit the table below with the hyperparams values you want")
+                st.write("Customize the table below with the values of hyperparameters you want to experiment with")
                 st.info(
-                    "By default, parameters use ranges (they are not fixed). You can mark 'fixed' column of the "
-                    "parameters you want to set with a fixed value and set it in corresponding column.",
+                    "By default, parameters use ranges (they are not fixed). You can mark 'use fixed value' column of the "
+                    "hyperparameter you want to set with a fixed value and set it in corresponding column.",
                     icon="🤓")
 
                 edited_df = st.data_editor(
@@ -141,18 +141,18 @@ if st.session_state.input_data_frame is not None:
                         "fixed value": st.column_config.NumberColumn(),
                         "range min": st.column_config.NumberColumn(),
                         "range max": st.column_config.NumberColumn(),
-                        "denominator": st.column_config.NumberColumn(
-                            label="denominator 📎",
-                            help="Denominator value to divide the hyperparameter value by. It applies only when the "
+                        "scale": st.column_config.NumberColumn(
+                            label="scale ⚠️",
+                            help="Scale value to divide the hyperparameter value by. It applies only when the "
                                  "'type' column is 'float'. If 'type' is 'int', this value should be 'None' as it "
                                  "does not apply."
                         )
                     },
-                    disabled=("hyperparam", "type")
+                    disabled=("hyperparam")
                 )
 
-                fixed_rows = edited_df.loc[edited_df["use fixed"] == True]
-                range_rows = edited_df.loc[edited_df["use fixed"] == False]
+                fixed_rows = edited_df.loc[edited_df["use fixed value"] == True]
+                range_rows = edited_df.loc[edited_df["use fixed value"] == False]
 
                 utils.set_custom_hyperparams(fixed_rows=fixed_rows, range_rows=range_rows)
             else:
@@ -160,7 +160,7 @@ if st.session_state.input_data_frame is not None:
 
     # Editable variables section - genetic params
     with genetic_params_tab:
-        col1, col2, col3 = st.columns([0.5, 0.3, 0.2])
+        col1, col2, col3 = st.columns([0.4, 0.4, 0.2])
 
         # Select amount of individuals and generation
         with col1:
@@ -181,13 +181,16 @@ if st.session_state.input_data_frame is not None:
             use_custom_seed = st.toggle('Set custom Python Random seed')
 
             if use_custom_seed:
-                custom_seed = st.number_input(
-                    label='Insert the value you want to initialize the random number generator in Python (seed):',
-                    min_value=0,
-                    value=1,
-                    step=1,
-                    format="%d")
-                utils.set_custom_seed(seed=custom_seed)
+                st.write('Insert the value you want to initialize the random number generator in Python (seed):')
+                subcol1, subcol2 = st.columns([0.2, 0.8])
+                with subcol1:
+                    custom_seed = st.number_input(
+                        label='Integer values only',
+                        min_value=0,
+                        value=1,
+                        step=1,
+                        format="%d")
+                    utils.set_custom_seed(seed=custom_seed)
             else:
                 utils.set_custom_seed(seed=0)
 

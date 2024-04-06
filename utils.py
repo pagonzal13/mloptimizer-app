@@ -138,7 +138,6 @@ class Utils:
     def get_dataframe(self):
         df = pd.DataFrame()
 
-        # for param_name, param_obj in eval(self.algorithm).get_default_hyperparams().items():
         hyperspace = HyperparameterSpace.get_default_hyperparameter_space(eval(self.algorithm))
 
         for param_name, param_obj in hyperspace.evolvable_hyperparams.items():
@@ -148,13 +147,13 @@ class Utils:
 
             param_row = pd.DataFrame(
                 {
-                    'hyperparam': [param_obj.name],
+                    'hyperparam': [param_name],
                     'hyperparam_type': [param_obj.hyperparam_type],
-                    'use fixed': [False],
+                    'scale': [scale],
+                    'use fixed value': [False],
                     'fixed value': [None],
                     'range min': [param_obj.min_value],
-                    'range max': [param_obj.max_value],
-                    'scale': [scale]
+                    'range max': [param_obj.max_value]
                 }
             )
             df = pd.concat([df, param_row])
