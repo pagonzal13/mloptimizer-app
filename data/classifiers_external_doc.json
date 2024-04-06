@@ -1,0 +1,9 @@
+{
+    "DecisionTreeClassifier": "https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html",
+    "RandomForestClassifier": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html",
+    "ExtraTreesClassifier": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html",
+    "GradientBoostingClassifier": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html",
+    "XGBClassifier": "https://xgboost.readthedocs.io/en/stable/python/python_api.html",
+    "CustomXGBClassifier": "https://mloptimizer.readthedocs.io/en/master/autoapi/mloptimizer/aux/alg_wrapper/index.html#mloptimizer.aux.alg_wrapper.CustomXGBClassifier",
+    "SVC": "https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html"
+}

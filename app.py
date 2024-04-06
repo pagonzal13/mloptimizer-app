@@ -91,28 +91,34 @@ if st.session_state.input_data_frame is not None:
         col1, col2 = st.columns([0.3, 0.7])
 
         # Get available algorithms from mloptimizer library
-        # optimizer_class_list = BaseOptimizer.get_subclasses(BaseOptimizer)
         with open(HyperparameterSpace.default_hyperparameter_spaces_json, 'r') as file:
             default_hyperparams = json.load(file)
         optimizer_class_list = [globals()[x] for x in default_hyperparams.keys()]
+
+        with open('data/classifiers_external_doc.json', 'r') as file:
+            classifier_links = json.load(file)
+
         optimizer_class_name_list = []
+        optimizer_docu_list = []
         for optimizer_item in optimizer_class_list:
-            optimizer_class_name_list.append(optimizer_item.__name__)
+            class_name = optimizer_item.__name__
+            optimizer_class_name_list.append(class_name)
+            if class_name in classifier_links:
+                link = classifier_links[class_name]
+                if link:
+                    optimizer_docu_list.append(f"learn more about [{utils.format_class_name(class_name_option=class_name)}]({link})")
+                else:
+                    optimizer_docu_list.append(f"explore other sources of information to learn more about {utils.format_class_name(class_name_option=class_name)}")
+            else:
+                optimizer_docu_list.append(f"explore other sources of information to learn more about {utils.format_class_name(class_name_option=class_name)}")
 
         # Select algorithm
         with col1:
-            optimizer_docu_list = []
-
-            for method in optimizer_class_name_list:
-                method_group_name = "trees"  # TO DO: this should come from the library, same way that __name__ does
-                group_docu_url = f"https://mloptimizer.readthedocs.io/en/master/autoapi/mloptimizer/genoptimizer/{method_group_name}/index.html"
-                optimizer_docu_list.append("more about [" + method_group_name + "](" + group_docu_url + ")")
-
             algorithm = st.radio(
                 label="Which algorithm would you like to use?",
                 options=optimizer_class_name_list,
                 captions=optimizer_docu_list,
-                format_func=lambda class_name: class_name.split("Optimizer")[0]
+                format_func=lambda option: utils.format_class_name(class_name_option=option)
             )
             utils.set_algorithm(algorithm=algorithm)
 

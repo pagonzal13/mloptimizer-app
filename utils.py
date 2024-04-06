@@ -34,6 +34,32 @@ class Utils:
     def set_target(self, target):
         self.target = target
 
+    def format_class_name(self, class_name_option):
+        partial_formatted_name = class_name_option.split("Classifier")[0]
+        formatted_name = ""
+
+        if partial_formatted_name.isupper():
+            return partial_formatted_name
+
+        prev_char_is_upper = False
+        for char in partial_formatted_name:
+            if char.isupper():
+                # If the current character is uppercase and the previous one was too, it's considered part of the acronym
+                if prev_char_is_upper:
+                    formatted_name += char
+                # If the current character is uppercase but the previous one wasn't, it's considered the start of a new word
+                else:
+                    if formatted_name:
+                        formatted_name += " " + char
+                    else:
+                        formatted_name += char
+                prev_char_is_upper = True
+            else:
+                formatted_name += char
+                prev_char_is_upper = False
+
+        return formatted_name
+
     def get_algorithm(self):
         return self.algorithm
 
