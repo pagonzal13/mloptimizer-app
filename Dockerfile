@@ -1,8 +1,8 @@
 FROM python:3.10.0-slim
 
-WORKDIR /mloptimizer
+WORKDIR /mloptimizer-app
 
-COPY . /mloptimizer
+COPY . /mloptimizer-app
 
 RUN pip install -r /mloptimizer/requirements.txt
 
